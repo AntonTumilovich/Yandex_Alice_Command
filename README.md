@@ -18,3 +18,6 @@ Yandex Alice Command
 Для работы скрипта нужны пакеты: php, php-curl, php-openssl.
 
 В файле ya_alice_cmd_flow.txt лежит пример флоу для Node-RED, перед использованием флоу замените путь до скрипта на свой.
+
+Если вам понравился проект, можете отблагодарить на кофе )))
+https://yasobe.ru/na/ya_alice_command
