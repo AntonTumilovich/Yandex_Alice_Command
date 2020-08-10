@@ -7,13 +7,13 @@ Yandex Alice Command
 Потом запустить с параметром get_token и прописать в скрипте main_token, все, можно использовать.
 
 Для произнесения Алисой фразы запустить:
-./y_alice_cmd.php tts "Добрый день"
+./alice.php tts "Добрый день"
 
 Для выполнения Алисой команды запустить:
-./y_alice_cmd.php tts "включи джаз"
-./y_alice_cmd.php tts "сделай погромче"
-./y_alice_cmd.php tts "сделай потише"
-./y_alice_cmd.php tts "стоп"
+./alice.php tts "включи джаз"
+./alice.php tts "сделай погромче"
+./alice.php tts "сделай потише"
+./alice.php tts "стоп"
 
 Для работы скрипта нужны пакеты: php, php-curl, php-openssl.
 
