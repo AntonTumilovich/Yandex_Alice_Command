@@ -10,6 +10,12 @@
 //////////////////////////////////////////////////////////////////
 
 
+/// v1.3 : 19/11/20 :
+// [ADD] : REMOVE SPEC CHAR FROM STRING
+// [ADD] : CUT LONG STRING TO 99 CHARS
+
+/// v1.4 : 27/11/20 :
+// [FIX] : SEARCH Speakers out of rooms
 
 
 class Yandex_Alice
@@ -72,6 +78,7 @@ class Yandex_Alice
   public $local_token = '';
 
 
+
   function __construct($username = '', $password = '', $speaker_name = '', $use_config = true, $config_file = '')
   {
     if (strlen($username) > 0) {$this->username = $username;};
@@ -92,9 +99,27 @@ class Yandex_Alice
     }
   }
 
+  function Clear_Data()
+  {
+    $this->username = '';
+    $this->password = '';
+
+    $this->out_cookies = '';
+
+    $this->speaker_id = '';
+    $this->speaker_id_all = array();
+    $this->scenario_id = '';
+
+    $this->scenario_name = 'Голос'; // Only russians symbols
+
+    $this->speaker_name = ''; // if not set, use first speaker;
+    $this->speaker_name_all = array(); // if not set, use first speaker;
+    $this->csrf_token = "";
+  }
 
   function Save_Data($file = '')
   {
+    if (!$this->Use_Config) {return;}
     if (strlen($file) > 0) {$this->Config_File = $file;}
     if ($this->debug) {echo "ALICE: Save config " . $this->Config_File . "\n";}
 
@@ -120,6 +145,7 @@ class Yandex_Alice
 
   function Load_Data($file = '')
   {
+    if (!$this->Use_Config) {return;}
     if (strlen($file) > 0) {$this->Config_File = $file;}
     if ($this->debug) {echo "ALICE: Load config " . $this->Config_File . "\n";}
     if (!file_exists($this->Config_File)) {return;}
@@ -314,7 +340,10 @@ function Get_Speaker_id()
 //      echo "Device name is " . $value->name . " type is " . $value->type . "\n";
       if (strpos($value->type, "devices.types.smart_speaker") > -1 || strpos($value->type, "yandex.module") > -1)
       {
-        echo "FOUNDED Device name is " . $value->name . " type is " . $value->type . "\n";
+        if ($this->verbose)
+        {
+          echo "FOUNDED Device name is " . $value->name . " type is " . $value->type . "\n";
+        }
         if (count($this->speaker_name_all) > 0)
         {
           foreach ($this->speaker_name_all as $key_name => $value_name)
@@ -342,6 +371,45 @@ function Get_Speaker_id()
       }
     }
   }
+
+    foreach($data->speakers as $key => $value)
+    {
+//      echo "Device name is " . $value->name . " type is " . $value->type . "\n";
+      if (strpos($value->type, "devices.types.smart_speaker") > -1 || strpos($value->type, "yandex.module") > -1)
+      {
+        if ($this->verbose)
+        {
+          echo "FOUNDED Device name is " . $value->name . " type is " . $value->type . "\n";
+        }
+        if (count($this->speaker_name_all) > 0)
+        {
+          foreach ($this->speaker_name_all as $key_name => $value_name)
+          {
+//            $value = $value * 2;
+//            if ($value->name == $this->speaker_name)
+            if ($value->name == $value_name)
+            {
+              if ($this->debug) {echo "found NAMEd spekaer " . $value->name . " id " . $value->id . "\n";}
+              array_push($this->speaker_id_all, $value->id);
+              $is_found = true;
+//            return $value->id;
+            }
+          }
+        }
+        else
+        {
+          if ($this->debug) {echo "found spekaer " . $value->name . " id " . $value->id . "\n";}
+//          $this->speaker_id_all = $value->id;
+          array_push($this->speaker_id_all, $value->id);
+          $is_found = true;
+//          $this->Save_Data();
+//          return $value->id;
+        }
+      }
+    }
+
+
+
 
   if ($is_found)
   {
@@ -431,7 +499,7 @@ function Add_Scenario()
   $query = $json;
 
 //  echo "JSON OUT ." . $json . ".\n";
-  file_put_contents('add_scenario_json_out.txt', $json);
+  file_put_contents('/tmp/add_scenario_json_out.txt', $json);
 
   $headers = array();
   $headers[] = 'Content-type: application/x-www-form-urlencoded';
@@ -453,7 +521,7 @@ function Add_Scenario()
   $result = curl_exec($ch);
 
 
-  file_put_contents('add_scenario_result.txt', $result);
+  file_put_contents('/tmp/add_scenario_result.txt', $result);
 
 //  $out_str_pos = strpos($result, '{"status":"ok"');
 //  $out_str = substr($result, $out_str_pos);
@@ -593,16 +661,20 @@ function Run_Scenario($text, $is_cmd = false)
 }
 
 
-function Say($text)
+function Say($textz)
 {
+//  $text = $textz;
+  $text = preg_replace('/[^А-Яа-яёA-Za-z0-9,]/iu', '', $textz);
+  $text = substr($text, 0, 99);
   if (strlen($text) < 1)
   {
     if ($this->debug)
     {
       echo "ALICE: ERROR: SAY: Text is short";
+      return "error_string_short";
     }
   }
-  $this->Run_Scenario($text, false);
+  return $this->Run_Scenario($text, false);
 }
 
 function Cmd($text)
@@ -612,9 +684,10 @@ function Cmd($text)
     if ($this->debug)
     {
       echo "ALICE: ERROR: CMD: Text is short";
+      return "error_string_short";
     }
   }
-  $this->Run_Scenario($text, true);
+  return $this->Run_Scenario($text, true);
 }
 
 

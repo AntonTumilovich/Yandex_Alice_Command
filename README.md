@@ -19,5 +19,14 @@ Yandex Alice Command
 
 В файле ya_alice_cmd_flow.txt лежит пример флоу для Node-RED, перед использованием флоу замените путь до скрипта на свой.
 
+
+v1.3 : 19/11/20 :
+  [ADD] : REMOVE SPEC CHAR FROM STRING
+  [ADD] : CUT LONG STRING TO 99 CHARS
+
+v1.4 : 27/11/20 :
+  [FIX] : SEARCH Speakers out of rooms
+
+
 Если вам понравился проект, можете отблагодарить на кофе )))
 https://yasobe.ru/na/ya_alice_command
