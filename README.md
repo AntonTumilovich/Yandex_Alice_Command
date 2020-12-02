@@ -27,6 +27,9 @@ v1.3 : 19/11/20 :<br>
 v1.4 : 27/11/20 :<br>
   [FIX] : SEARCH Speakers out of rooms<br>
 
+v1.5 : 02/11/20 :
+ [ADD] : Function Send($msg), if $msg have at begin chars '!!', then msg send as comman else - msg send as tts msg
+ [FIX] : Space cut on msg
 
 Если вам понравился проект, можете отблагодарить на кофе )))
 https://yasobe.ru/na/ya_alice_command

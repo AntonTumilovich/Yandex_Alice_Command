@@ -1,6 +1,6 @@
 <?php
 
-///////////////// Yandex_Alice_Cmd PHP Lib v 1.3//////////////////
+///////////////// Yandex_Alice_Cmd PHP Lib v 1.5//////////////////
 //////////////////////////////////////////////////////////////////
 /////////////////// Created by Anton Tumilovich //////////////////
 /////////////////// Telegram @Anton_Tumilovich  //////////////////
@@ -17,6 +17,9 @@
 /// v1.4 : 27/11/20 :
 // [FIX] : SEARCH Speakers out of rooms
 
+/// v1.5 : 02/11/20 :
+// [ADD] : Function Send($msg), if $msg have at begin chars '!!', then msg send as comman else - msg send as tts msg
+// [FIX] : Space cut on msg
 
 class Yandex_Alice
 {
@@ -77,7 +80,7 @@ class Yandex_Alice
 //////// for local work, but now not done ////////
   public $local_token = '';
 
-
+  public $yandex_login_error_link = '';
 
   function __construct($username = '', $password = '', $speaker_name = '', $use_config = true, $config_file = '')
   {
@@ -200,9 +203,13 @@ class Yandex_Alice
 //echo "\ncookies1 " . $cookies . "\n";
     $result = curl_exec($ch);
 
+    if (strpos($result, "Redirecting to https://passport.yandex.ru/auth/finish") === FALSE)
+    {
+      $this->yandex_login_error_link = Get_String_Value_Full($result, "Redirecting to ", "");
+    }
+//      $this->yandex_login_error_link = Get_String_Value_Full($result, "Redirecting to ", "");
 
-
-//  file_put_contents('a.html', $result);
+    file_put_contents('/tmp/alice_tts_login_result.txt', $result);
 
 
 // читаем куки здесь
@@ -372,43 +379,41 @@ function Get_Speaker_id()
     }
   }
 
-    foreach($data->speakers as $key => $value)
-    {
+  foreach($data->speakers as $key => $value)
+  {
 //      echo "Device name is " . $value->name . " type is " . $value->type . "\n";
       if (strpos($value->type, "devices.types.smart_speaker") > -1 || strpos($value->type, "yandex.module") > -1)
+    {
+      if ($this->verbose)
       {
-        if ($this->verbose)
+        echo "FOUNDED Device name is " . $value->name . " type is " . $value->type . "\n";
+      }
+      if (count($this->speaker_name_all) > 0)
+      {
+        foreach ($this->speaker_name_all as $key_name => $value_name)
         {
-          echo "FOUNDED Device name is " . $value->name . " type is " . $value->type . "\n";
-        }
-        if (count($this->speaker_name_all) > 0)
-        {
-          foreach ($this->speaker_name_all as $key_name => $value_name)
-          {
 //            $value = $value * 2;
 //            if ($value->name == $this->speaker_name)
-            if ($value->name == $value_name)
-            {
-              if ($this->debug) {echo "found NAMEd spekaer " . $value->name . " id " . $value->id . "\n";}
-              array_push($this->speaker_id_all, $value->id);
-              $is_found = true;
+          if ($value->name == $value_name)
+          {
+            if ($this->debug) {echo "found NAMEd spekaer " . $value->name . " id " . $value->id . "\n";}
+            array_push($this->speaker_id_all, $value->id);
+            $is_found = true;
 //            return $value->id;
-            }
           }
         }
-        else
-        {
-          if ($this->debug) {echo "found spekaer " . $value->name . " id " . $value->id . "\n";}
+      }
+      else
+      {
+        if ($this->debug) {echo "found spekaer " . $value->name . " id " . $value->id . "\n";}
 //          $this->speaker_id_all = $value->id;
-          array_push($this->speaker_id_all, $value->id);
-          $is_found = true;
+        array_push($this->speaker_id_all, $value->id);
+        $is_found = true;
 //          $this->Save_Data();
 //          return $value->id;
-        }
       }
     }
-
-
+  }
 
 
   if ($is_found)
@@ -534,9 +539,21 @@ function Add_Scenario()
 
 
 
-function Run_Scenario($text, $is_cmd = false)
+function Run_Scenario($textz, $is_cmd = false)
 {
-  if (strlen($text) < 2) {return;}
+  $text = preg_replace('/[^А-Яа-яёA-Za-z0-9,\s]/iu', '', $textz);
+  $text = substr($text, 0, 99);
+
+  if (strlen($text) < 2)
+  {
+    if ($this->debug)
+    {
+      echo "ALICE: ERROR: CMD: Text is short";
+      return "error_string_short";
+    }
+  }
+
+// echo "cmd is ." . $is_cmd . "., msg is " . $text;
 
   if (strlen($this->out_cookies) < 1)    {$this->Login();}
   if (strlen($this->speaker_id) < 1)     {$this->Get_Speaker_id();}
@@ -661,32 +678,26 @@ function Run_Scenario($text, $is_cmd = false)
 }
 
 
-function Say($textz)
+function Send($text)
+{
+  if (substr($text, 0, 2) == "!!")
+  {
+    return $this->Run_Scenario($text, true);
+  }
+  else
+  {
+    return $this->Run_Scenario($text, false);
+  }
+}
+
+function Say($text)
 {
 //  $text = $textz;
-  $text = preg_replace('/[^А-Яа-яёA-Za-z0-9,]/iu', '', $textz);
-  $text = substr($text, 0, 99);
-  if (strlen($text) < 1)
-  {
-    if ($this->debug)
-    {
-      echo "ALICE: ERROR: SAY: Text is short";
-      return "error_string_short";
-    }
-  }
   return $this->Run_Scenario($text, false);
 }
 
 function Cmd($text)
 {
-  if (strlen($text) < 1)
-  {
-    if ($this->debug)
-    {
-      echo "ALICE: ERROR: CMD: Text is short";
-      return "error_string_short";
-    }
-  }
   return $this->Run_Scenario($text, true);
 }
 
